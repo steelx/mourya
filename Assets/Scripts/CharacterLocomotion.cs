@@ -11,36 +11,30 @@ public class CharacterLocomotion : MonoBehaviour
 
     [HideInInspector]
     public CharacterController chController;
-    private Vector3 playerVelocity;
+    public Vector3 playerVelocity;
 
     [HideInInspector]
     public AnimatorHandler animatorHandler;
 
 
     [Header("Fall Detections Stats")]
-    float leapingVelocity = 0.3f;
-    [SerializeField]
-    LayerMask groundLayer;
+    [SerializeField] LayerMask groundLayer;
     float inAirTimer;
 
 
     [Header("Movement Stats")]
-    const float movementSpeed = 3f;
-    const float walkingSpeed = 1.8f;
-    const float sprintSpeed = 8f;
+    const float walkingSpeed = 2.4f;
+    const float sprintSpeed = 8.81f;
     const float rotationSpeed = 10;
-    //[SerializeField] float jumpHeight = 1.0f;
     const float gravityValue = -9.81f;
-    const float fallingSpeed = 25f;
-    const float groundDirectionRayDistance = 0.5f;
+    //[SerializeField] float jumpHeight = 1.0f;
 
 
     //Player Flags
-    public bool isGrounded;
-    public bool isSprinting;
-    public bool isInAir;
-    [HideInInspector]
-    public bool isJumping;
+    [HideInInspector] public bool isGrounded;
+    [HideInInspector] public bool isSprinting;
+    [HideInInspector] public bool isInAir;
+    [HideInInspector] public bool isJumping;
 
 
     // Start is called before the first frame update
@@ -50,7 +44,7 @@ public class CharacterLocomotion : MonoBehaviour
         inputHandler = GetComponent<InputHandler>();
         animatorHandler = GetComponentInChildren<AnimatorHandler>();
         cameraObject = Camera.main.transform;
-        isInAir = !chController.isGrounded;
+        isGrounded = true;
     }
 
     void HandleRotation(float delta)
@@ -73,10 +67,6 @@ public class CharacterLocomotion : MonoBehaviour
 
     public void CharacterMovement(float delta)
     {
-        if (chController.isGrounded && playerVelocity.y < 0)
-        {
-            playerVelocity.y = 0;
-        }
         isSprinting = inputHandler.b_input;
         if (inputHandler.rollFlag) return;
 
@@ -88,10 +78,8 @@ public class CharacterLocomotion : MonoBehaviour
         }
 
         Vector2 inputXY = new Vector2(inputHandler.horizontal, inputHandler.vertical);
-        moveDirection = getFollowCameraMovement(inputXY, delta);
-        moveDirection *= delta * speed;
-
-        chController.Move(moveDirection);
+        moveDirection = GetFollowCameraMovement(inputXY);
+        chController.Move(delta * speed * moveDirection);
 
         // rotation
         if (moveDirection != Vector3.zero)
@@ -108,9 +96,17 @@ public class CharacterLocomotion : MonoBehaviour
         //}
 
         // Gravity
-        playerVelocity.y += gravityValue * delta;
-        chController.Move(playerVelocity);
-        Debug.LogWarning("playerVelocity: " + playerVelocity);
+        if (chController.isGrounded || playerVelocity.y < 0)
+        {
+            playerVelocity.y = 0;
+        }
+        else
+        {
+            playerVelocity.y += gravityValue * delta;
+        }
+
+        chController.Move(playerVelocity * delta);
+
 
         //animation
         animatorHandler.UpdateAnimatorValues(inputHandler.moveAmount, 0, isSprinting);
@@ -119,7 +115,7 @@ public class CharacterLocomotion : MonoBehaviour
             HandleRotation(delta);
         }
     }
-    Vector3 getFollowCameraMovement(Vector2 input, float delta)
+    Vector3 GetFollowCameraMovement(Vector2 input)
     {
         Vector3 move = new Vector3(input.x, 0, input.y);
         move = move.x * cameraObject.right.normalized + move.z * cameraObject.forward.normalized;
@@ -134,17 +130,13 @@ public class CharacterLocomotion : MonoBehaviour
         if (inputHandler.rollFlag)
         {
             Vector2 inputXY = new Vector2(inputHandler.horizontal, inputHandler.vertical);
-            moveDirection = getFollowCameraMovement(inputXY, delta);
-
-            //moveDirection = cameraObject.forward * inputHandler.vertical;
-            //moveDirection += cameraObject.right * inputHandler.horizontal;
+            moveDirection = GetFollowCameraMovement(inputXY);
 
             if (inputHandler.moveAmount > 0)
             {
                 animatorHandler.PlayTargetAnimation("Rolling", true);
                 moveDirection.y = 0;
                 Quaternion rollRotation = Quaternion.LookRotation(moveDirection);
-                //this.transform.rotation = rollRotation;
                 chController.transform.rotation = rollRotation;
             }
             else
@@ -156,49 +148,23 @@ public class CharacterLocomotion : MonoBehaviour
 
     public void UpdateInAirTimer(float delta)
     {
-        isInAir = !chController.isGrounded;
-        isGrounded = chController.isGrounded;
         if (isInAir)
         {
             inAirTimer += delta;
         }
     }
 
-    public void HandleFallingAndLanding(float delta)
+    public void CharacterFallingAndLanding(float delta)
     {
-        if (isInAir)
+        Vector3 origin = chController.transform.position;
+        // using late update here
+        if (Physics.Raycast(origin, Vector3.down, out RaycastHit hitInfo, 1f, groundLayer))
         {
-            chController.Move(Vector3.down * fallingSpeed);
-            chController.Move(moveDirection * leapingVelocity * fallingSpeed);// jump off edge
-        }
-
-        Vector3 raycastOrigin = chController.transform.position;
-        Vector3 targetPosition = chController.transform.position;
-        Vector3 dir = moveDirection;
-        dir.Normalize();
-        raycastOrigin += dir * groundDirectionRayDistance;
-
-        // this checks if we are on ground, and we `hit` ground layer
-        if (Physics.Raycast(raycastOrigin, Vector3.down, out RaycastHit hit, 1, groundLayer))
-        {
-            // if raycast hits somthing, means we are on ground
-            // we also need to calculate movement here, since CharacterMovement will be locked 
-            // untill we are isInAir = true
-
-            //if (isInAir && !animatorHandler.IsInteracting())
-            //{
-            //    animatorHandler.PlayTargetAnimation("Land", true);
-            //}
-
-            //Debug.LogWarning("Hit " + hit.distance);
-            Vector3 raycastHitPoint = hit.point;
-            targetPosition.y = raycastHitPoint.y;
-
+            isGrounded = true;
             // if were inAir during detection
             if (isInAir)
             {
-                Debug.DrawRay(raycastOrigin, Vector3.down, Color.green);
-                if (inAirTimer > 0.5f || hit.distance > 0.5f)
+                if (inAirTimer > 0.5f)
                 {
                     Debug.Log("You were in air for: " + inAirTimer);
                     animatorHandler.PlayTargetAnimation("Land", true);
@@ -206,50 +172,25 @@ public class CharacterLocomotion : MonoBehaviour
                 else
                 {
                     animatorHandler.PlayTargetAnimation("Locomotion", false);
-                    inAirTimer = 0;
                 }
-                
+                inAirTimer = 0;
                 isInAir = false;
             }
         }
         else
         {
-            // didnt hit ground layer
+            if (isGrounded)
+            {
+                isGrounded = false;
+            }
             if (!isInAir)
             {
                 if (!animatorHandler.IsInteracting())
                 {
                     animatorHandler.PlayTargetAnimation("Falling", true);
                 }
-
-                Vector3 velocity = chController.velocity;
-                velocity.Normalize();
-                chController.Move(velocity * (movementSpeed/2));
                 isInAir = true;
             }
         }
-
-        if (chController.isGrounded)
-        {
-            if (animatorHandler.IsInteracting() || inputHandler.moveAmount > 0)
-            {
-                chController.transform.position = Vector3.Lerp(chController.transform.position, targetPosition, delta / 0.1f);
-            }
-            else
-            {
-                chController.transform.position = targetPosition;
-            }
-        }
-    }
-
-    public void CharacterFallingAndLanding(float delta)
-    {
-        if (isInAir)
-        {
-            chController.Move(delta * fallingSpeed * Vector3.down);
-            chController.Move(fallingSpeed * leapingVelocity * moveDirection);// jump off edge
-        }
-
-
     }
 }

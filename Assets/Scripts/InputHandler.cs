@@ -18,16 +18,16 @@ public class InputHandler : MonoBehaviour
     public bool rollFlag;// player is going to roll
 
     // Awake happens before OnEnable
+    private void Awake()
+    {
+        inputActions = new PlayerControls();
+        inputActions.PlayerMovement.Movement.performed += (i) => movementInput = i.ReadValue<Vector2>();
+        inputActions.PlayerMovement.Camera.performed += (i) => cameraInput = i.ReadValue<Vector2>();
+    }
 
     // subscribe events
     private void OnEnable()
     {
-        if (inputActions == null)
-        {
-            inputActions = new PlayerControls();
-            inputActions.PlayerMovement.Movement.performed += (i) => movementInput = i.ReadValue<Vector2>();
-            inputActions.PlayerMovement.Camera.performed += (i) => cameraInput = i.ReadValue<Vector2>();
-        }
         inputActions.Enable();
     }
 

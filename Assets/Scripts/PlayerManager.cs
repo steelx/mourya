@@ -18,10 +18,9 @@ public class PlayerManager : MonoBehaviour
     void Update()
     {   
         inputHandler.TickInput(Time.deltaTime);
-        locomotion.CharacterMovement(Time.deltaTime);
         locomotion.HandleRollingAndSprint(Time.deltaTime);
-        //locomotion.HandleFallingAndLanding(Time.deltaTime);
-        //locomotion.CharacterFallingAndLanding(Time.deltaTime);
+        locomotion.CharacterFallingAndLanding(Time.deltaTime);
+        locomotion.CharacterMovement(Time.deltaTime);
     }
 
     void LateUpdate()
