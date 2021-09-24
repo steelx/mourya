@@ -67,19 +67,21 @@ public class CharacterLocomotion : MonoBehaviour
 
     public void CharacterMovement(float delta)
     {
-        isSprinting = inputHandler.b_input;
-        if (inputHandler.rollFlag) return;
-
         float speed = walkingSpeed;
-        if (inputHandler.sprintFlag)
+        if (inputHandler.sprintFlag & inputHandler.moveAmount > 0.5)
         {
             speed = sprintSpeed;
             isSprinting = true;
         }
+        else
+        {
+            isSprinting = false;
+        }
 
         Vector2 inputXY = new Vector2(inputHandler.horizontal, inputHandler.vertical);
         moveDirection = GetFollowCameraMovement(inputXY);
-        chController.Move(delta * speed * moveDirection);
+        moveDirection *= speed;
+        chController.Move(delta * moveDirection);
 
         // rotation
         if (moveDirection != Vector3.zero)
