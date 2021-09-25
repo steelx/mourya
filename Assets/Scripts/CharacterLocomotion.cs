@@ -31,11 +31,10 @@ public class CharacterLocomotion : MonoBehaviour
 
 
     //Player Flags
-    [HideInInspector] public bool isGrounded;
-    [HideInInspector] public bool isSprinting;
-    [HideInInspector] public bool isInAir;
-    [HideInInspector] public bool isJumping;
-
+    public bool isGrounded;
+    public bool isSprinting;
+    public bool isInAir;
+    public bool isJumping;
 
     // Start is called before the first frame update
     void Start()
@@ -67,6 +66,7 @@ public class CharacterLocomotion : MonoBehaviour
 
     public void CharacterMovement(float delta)
     {
+        //Debug.LogWarning("IsInteracting " + animatorHandler.IsInteracting());
         float speed = walkingSpeed;
         if (inputHandler.sprintFlag & inputHandler.moveAmount > 0.5)
         {
@@ -173,7 +173,7 @@ public class CharacterLocomotion : MonoBehaviour
                 }
                 else
                 {
-                    animatorHandler.PlayTargetAnimation("Locomotion", false);
+                    animatorHandler.PlayTargetAnimation("Empty", false);
                 }
                 inAirTimer = 0;
                 isInAir = false;

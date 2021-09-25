@@ -2,9 +2,11 @@ using UnityEngine;
 
 public class InputHandler : MonoBehaviour
 {
-    private PlayerControls inputActions;
-    private Vector2 movementInput;
-    private Vector2 cameraInput;
+    PlayerControls inputActions;
+    PlayerAttacks playerAttacks;
+    PlayerInventory playerInventory;
+    Vector2 movementInput;
+    Vector2 cameraInput;
 
     public float horizontal;
     public float vertical;
@@ -13,6 +15,8 @@ public class InputHandler : MonoBehaviour
     public float mouseY;
 
     public bool b_input;// controler B button or Shift key
+    public bool rb_input;
+    public bool rt_input;
     private float rollInputTimer;
     public bool sprintFlag;// player going to spring
     public bool rollFlag;// player is going to roll
@@ -20,6 +24,8 @@ public class InputHandler : MonoBehaviour
     // Awake happens before OnEnable
     private void Awake()
     {
+        playerAttacks = GetComponent<PlayerAttacks>();
+        playerInventory = GetComponent<PlayerInventory>();
         inputActions = new PlayerControls();
         inputActions.PlayerMovement.Movement.performed += (i) => movementInput = i.ReadValue<Vector2>();
         inputActions.PlayerMovement.Camera.performed += (i) => cameraInput = i.ReadValue<Vector2>();
@@ -41,6 +47,7 @@ public class InputHandler : MonoBehaviour
     {
         MoveInput(delta);
         RollingInput(delta);
+        AttackInput(delta);
     }
     private void MoveInput(float delta)
     {
@@ -69,5 +76,20 @@ public class InputHandler : MonoBehaviour
             rollInputTimer = 0;
         }
 
+    }
+
+    private void AttackInput(float delta)
+    {
+        inputActions.PlayerActions.RB.performed += i => rb_input = true;
+        inputActions.PlayerActions.RT.performed += i => rt_input = true;
+
+        if (rb_input)
+        {
+            playerAttacks.HandleLightAttack(playerInventory.rightWeapon);
+        }
+        if (rt_input)
+        {
+            playerAttacks.HandleHeavyAttack(playerInventory.leftWeapon);
+        }
     }
 }

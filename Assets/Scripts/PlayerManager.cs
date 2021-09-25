@@ -27,6 +27,8 @@ public class PlayerManager : MonoBehaviour
     {
         inputHandler.rollFlag = false;
         inputHandler.sprintFlag = false;
+        inputHandler.rb_input = false;
+        inputHandler.rt_input = false;
         locomotion.UpdateInAirTimer(Time.deltaTime);
     }
 }
